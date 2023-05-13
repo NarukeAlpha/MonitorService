@@ -13,6 +13,21 @@ var UserAgent = []string{
 	"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36",
 }
 
+type DbMangaEntry struct {
+	Did          int    `json:"did"`
+	Dmanga       string `json:"dmanga"`
+	DlastChapter int    `json:"dlastChapter"`
+	Dmonitoring  bool   `json:"dmonitoring"`
+	Didentifier  string `json:"didentifier"`
+}
+
+type DbChapterEntry struct {
+	Did          int    `json:"did"`
+	Dchapter     int    `json:"dchapter"`
+	DChapterLink string `json:"dChapterlink"`
+	Dreleased    bool   `json:"dreleased"`
+}
+
 //{
 //"content": null,
 //"embeds": [
