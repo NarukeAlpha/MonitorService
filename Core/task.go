@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func Task(browser playwright.BrowserContext, mw io.Writer) {
+func Task(browser playwright.BrowserContext, mw io.Writer, MangaList []DbMangaEntry, ChapterList []DbChapterEntry) {
 	page, err := browser.NewPage()
 	if err != nil {
 		log.Fatalf("could not create page: %v", err)
@@ -39,6 +39,15 @@ func Task(browser playwright.BrowserContext, mw io.Writer) {
 
 	}
 	time.Sleep(10 * time.Second)
+}
+
+func TaskInit(mw io.Writer, mL []DbMangaEntry, cL []DbChapterEntry, pL []ProxyStruct) {
+	var browser = PlaywrightInit()
+	var pLng = len(pL)
+	var clng = len(cL)
+	var startingPoint = clng / pLng
+	//adding a an algorithim to split the starting point of each gotask evenly across the proxies
+
 }
 
 func PlaywrightInit() playwright.BrowserContext {

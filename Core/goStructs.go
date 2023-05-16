@@ -27,6 +27,11 @@ type DbChapterEntry struct {
 	DChapterLink string `json:"dChapterlink"`
 	Dreleased    bool   `json:"dreleased"`
 }
+type ProxyStruct struct {
+	ip  string
+	usr string
+	pw  string
+}
 
 //{
 //"content": null,

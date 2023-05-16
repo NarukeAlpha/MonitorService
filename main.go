@@ -22,8 +22,9 @@ func main() {
 	defer file.Close()
 	mw := io.MultiWriter(os.Stdout, file)
 
-	var browser = Core.PlaywrightInit()
 	var mL, cL = Core.ServerSync()
-	Core.Task(browser, mw)
+	var pL = Core.ProxyLoad()
+
+	Core.TaskInit(mw, mL, cL, pL)
 
 }
