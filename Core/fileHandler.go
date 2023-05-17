@@ -7,9 +7,11 @@ import (
 	"log"
 	"os"
 	"strings"
+	"sync"
 )
 
-func ProxyLoad() []ProxyStruct {
+func ProxyLoad(c chan []ProxyStruct, wg *sync.WaitGroup) {
+	defer wg.Done()
 	var returnPS []ProxyStruct
 	var path = "./ProxyList.csv"
 	f, err := os.Open(path)
@@ -50,5 +52,5 @@ func ProxyLoad() []ProxyStruct {
 		}
 
 	}
-	return returnPS
+	c <- returnPS
 }

@@ -45,7 +45,11 @@ func TaskInit(mw io.Writer, mL []DbMangaEntry, cL []DbChapterEntry, pL []ProxySt
 	var browser = PlaywrightInit()
 	var pLng = len(pL)
 	var clng = len(cL)
-	var startingPoint = clng / pLng
+	if clng < pLng {
+
+	}
+
+	//var startingPoint = clng / pLng
 	//adding a an algorithim to split the starting point of each gotask evenly across the proxies
 
 }
