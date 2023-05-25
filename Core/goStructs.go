@@ -18,6 +18,7 @@ type DbMangaEntry struct {
 	Dmanga       string `json:"dmanga"`
 	DlastChapter int    `json:"dlastChapter"`
 	Dmonitoring  bool   `json:"dmonitoring"`
+	dchapterLink string `json:"dchapterLink"`
 	Didentifier  string `json:"didentifier"`
 }
 
