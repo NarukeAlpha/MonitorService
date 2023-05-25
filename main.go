@@ -40,6 +40,6 @@ func main() {
 	close(pChannel)
 
 	//initializing the monitor
-	Core.TaskInit(mw, &mL, pL)
+	Core.TaskInit(mw, mL, pL)
 
 }
