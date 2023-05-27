@@ -33,9 +33,6 @@ func TaskInit(mw io.Writer, mL []DbMangaEntry, pL []ProxyStruct) {
 		}
 	}
 
-	//var startingPoint = mLng / pLng
-	//adding a an algorithim to split the starting point of each gotask evenly across the proxies
-
 }
 
 func PlaywrightInit(proxy ProxyStruct) playwright.BrowserContext {
@@ -48,9 +45,15 @@ func PlaywrightInit(proxy ProxyStruct) playwright.BrowserContext {
 	viewprt := playwright.BrowserTypeLaunchPersistentContextOptionsViewport{Width: &width, Height: &height}
 	var pth = `C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe`
 	extensionPath := "C:\\Users\\bagaa\\AppData\\Local\\Microsoft\\Edge\\User Data\\Default\\Extensions\\odfafepnkmbhccpbejgmiehpchacaeak\\1.48.0_0"
+	var pwProxyStrct = playwright.BrowserTypeLaunchPersistentContextOptionsProxy{
+		Server:   &proxy.ip,
+		Username: &proxy.usr,
+		Password: &proxy.pw,
+	}
 	browser, err := pw.Chromium.LaunchPersistentContext("", playwright.BrowserTypeLaunchPersistentContextOptions{
 		Headless:       playwright.Bool(false),
 		UserAgent:      &UserAgent[rand.Intn(8)],
+		Proxy:          &pwProxyStrct,
 		Viewport:       &viewprt,
 		ExecutablePath: &pth,
 		ColorScheme:    playwright.ColorSchemeDark,
@@ -75,35 +78,52 @@ func Task(mw io.Writer, proxy ProxyStruct, manga []DbMangaEntry, stPoint int) {
 		log.Fatalf("could not create page: %v", err)
 	}
 	defer page.Close()
-	for i := stPoint; i < len(manga); i++ {
-		if manga[i].Didentifier == "" {
-			log.Panicf("null value on identifier of manga entry :%v", manga[i])
-		} else if manga[i].Didentifier == "Release" {
-			//algorithm will check the next paged supposed to go live when the chapter is releaqsed
-		} else {
-			//algorithm will check the page in the ChapterLink page for an identifier to be gone.  usually it will be some kind of countdown clock
+	for {
+		for i := stPoint; i < len(manga); i++ {
+			cLink := ChapterLinkIncrementer(manga[i].dchapterLink, manga[i].DlastChapter)
+			identifier := IdentifierDeRegex(manga[i].Didentifier)
+			if manga[i].Didentifier == "" {
+				log.Panicf("null value on identifier of manga entry :%v", manga[i])
+			} else if manga[i].Didentifier == "Release" {
+				//algorithm will check the next paged supposed to go live when the chapter is releaqsed
+
+				//TODO Need to add a function to modify the link and move it up one chapter
+
+				if _, err = page.Goto(cLink); err != nil {
+					log.Printf("coudln't hit webpage chapter specific")
+
+				}
+
+				page.WaitForLoadState("load")
+				checkURL := page.URL()
+				if checkURL == cLink {
+					fmt.Fprintln(mw, "PAGE IS LIVE")
+					WebhookSend(manga[i])
+				} else {
+					fmt.Fprintln(mw, "Page not live, will keep monitoring")
+				}
+			} else {
+				//algorithm will check the page in the ChapterLink page for an identifier to be gone.  usually it will be some kind of countdown clock
+
+				if _, err = page.Goto(cLink); err != nil {
+					log.Printf("coudln't hit webpage chapter specific")
+
+				}
+				//This works by checking to see how many selectors of the identifier it can find.  If it can't find any, then the page is live
+
+				countdownIdentifier, _ := page.QuerySelectorAll(identifier)
+				if countdownIdentifier == nil {
+					fmt.Fprintln(mw, "Failed to create slice of countdown elements")
+				} else if len(countdownIdentifier) == 0 {
+					fmt.Fprintln(mw, "PAGE IS LIVE")
+					WebhookSend(manga[i])
+				} else {
+					fmt.Fprintln(mw, "Page not live, will keep monitoring")
+				}
+
+			}
 		}
-	}
 
-	if _, err = page.Goto("https://readeleceed.com/manga/eleceed-chapter-239/"); err != nil {
-		log.Printf("coudln't hit webpage chapter specific")
+		time.Sleep(10 * time.Second)
 	}
-
-	time.Sleep(5 * time.Second)
-	iframes, _ := page.QuerySelectorAll("iframe")
-	for _, iframe := range iframes {
-		iframe.Evaluate("this.remove()")
-	}
-
-	countdownEls, _ := page.QuerySelectorAll("[data-type='countdown']")
-	if countdownEls == nil {
-		fmt.Fprintln(mw, "failed to create element counter")
-	} else if len(countdownEls) == 0 {
-		fmt.Fprintln(mw, "PAGE IS LIVE")
-		WebhookSend()
-	} else {
-		fmt.Fprintln(mw, "Page not live, will keep monitoring")
-
-	}
-	time.Sleep(10 * time.Second)
 }

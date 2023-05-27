@@ -6,6 +6,8 @@ import (
 	"io"
 	"log"
 	"os"
+	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 )
@@ -53,4 +55,26 @@ func ProxyLoad(c chan []ProxyStruct, wg *sync.WaitGroup) {
 
 	}
 	c <- returnPS
+}
+
+func ChapterLinkIncrementer(chapterLink string, chapterNumber int) string {
+	pattern := strconv.Itoa(chapterNumber)
+	re := regexp.MustCompile(pattern)
+	match := re.FindString(chapterLink)
+	var trgChapterNumber int = chapterNumber + 1
+
+	if match != "" {
+		replacement := strconv.Itoa(trgChapterNumber)
+		result := re.ReplaceAllString(chapterLink, replacement)
+		return result
+	}
+	return "error"
+
+}
+
+func IdentifierDeRegex(identifier string) string {
+	pattern := "%20"
+	re := regexp.MustCompile(pattern)
+	var result = re.ReplaceAllString(identifier, "'")
+	return result
 }
