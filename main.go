@@ -27,11 +27,11 @@ func main() {
 	defer file.Close()
 	mw := io.MultiWriter(os.Stdout, file)
 
-	//waitgroup to launch all 3 go routines and wait until each one is done before attempting to reach from each channel.
-	wg.Add(3)
+	//waitgroup to launch all 2 go routines and wait until each one is done before attempting to reach from each channel.
+	wg.Add(2)
 	go Core.MangaSync(mChannel, &wg)
 	go Core.ProxyLoad(pChannel, &wg)
-	wg.Wait()
+	//	wg.Wait()
 
 	//receiving from each channel and closing them
 	mL := <-mChannel

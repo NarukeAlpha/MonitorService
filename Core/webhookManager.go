@@ -22,8 +22,8 @@ type Field struct {
 
 func WebhookSend(manga DbMangaEntry) {
 
-	var title = "New" + manga.Dmanga + "Chapter Released"
-	var description = "Find it here! : " + manga.dchapterLink
+	var title = "New " + manga.Dmanga + " Chapter Released"
+	var description = "Find it here! : " + manga.DchapterLink
 
 	WebhookURL := "https://discord.com/api/webhooks/"
 
@@ -36,13 +36,12 @@ func WebhookSend(manga DbMangaEntry) {
 		Content: nil,
 		Embeds: []Embed{
 			{
-				Title:       title,
-				Description: description,
-				Color:       5814783,
+				Title: title,
+				Color: 5814783,
 				Fields: []Field{
 					{
 						Name:  "LINK BELOW",
-						Value: "placeholder",
+						Value: description,
 					},
 				},
 			},

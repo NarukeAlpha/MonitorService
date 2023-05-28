@@ -18,7 +18,7 @@ func ProxyLoad(c chan []ProxyStruct, wg *sync.WaitGroup) {
 	var path = "./ProxyList.csv"
 	f, err := os.Open(path)
 	if err != nil {
-		log.Fatalf("couldn't open", err)
+		log.Fatalf("couldn't open - err: %v", err)
 	}
 	defer f.Close()
 	csvReader := csv.NewReader(f)
@@ -27,7 +27,7 @@ func ProxyLoad(c chan []ProxyStruct, wg *sync.WaitGroup) {
 			fmt.Println("Loading proxies")
 			_, err := csvReader.Read()
 			if err != nil {
-				log.Fatalf("failed to open csv", err)
+				log.Fatalf("failed to open csv - err: %v", err)
 			}
 
 		} else {
@@ -35,7 +35,7 @@ func ProxyLoad(c chan []ProxyStruct, wg *sync.WaitGroup) {
 			if err == io.EOF {
 				break
 			} else if err != nil {
-				log.Fatalf("dead", err)
+				log.Fatalf("CSV reader failed - err : %v", err)
 			}
 			fmt.Printf("%+v \n", rec)
 			split := strings.Split(rec[0], ":")
@@ -55,6 +55,7 @@ func ProxyLoad(c chan []ProxyStruct, wg *sync.WaitGroup) {
 
 	}
 	c <- returnPS
+	return
 }
 
 func ChapterLinkIncrementer(chapterLink string, chapterNumber int) string {
