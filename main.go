@@ -42,4 +42,9 @@ func main() {
 	//initializing the monitor
 	Core.TaskInit(mw, mL, pL)
 
+	for {
+		//infinite loop to keep the program running
+		//might add an open server to interaqct directly with the program?
+	}
+
 }

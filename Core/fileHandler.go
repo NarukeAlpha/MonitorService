@@ -79,3 +79,12 @@ func IdentifierDeRegex(identifier string) string {
 	var result = re.ReplaceAllString(identifier, "'")
 	return result
 }
+
+func titleHas404(title string) bool {
+	title = strings.ToLower(title)
+	strings.Contains(title, "Page Not Found")
+	if strings.Contains(title, "page not found") {
+		return true
+	}
+	return false
+}

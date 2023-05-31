@@ -20,7 +20,8 @@ func TaskInit(mw io.Writer, mL []DbMangaEntry, pL []ProxyStruct) {
 		//need to add back go for concurrency when debugging is finished
 
 		for i := 0; i < mLng; i++ {
-			Task(mw, pL[i], mL, i)
+			go Task(mw, pL[i], mL, i)
+			time.Sleep(2 * time.Minute)
 		}
 
 	} else if mLng > pLng {
@@ -28,9 +29,10 @@ func TaskInit(mw io.Writer, mL []DbMangaEntry, pL []ProxyStruct) {
 		stPointFl = float64(mLng) / float64(pLng)
 		stPoint := int(math.Round(stPointFl))
 
-		for i := 0; i < mLng; i++ {
+		for i := 0; i < pLng; i++ {
 			stP := stPoint * i
-			Task(mw, pL[i], mL, stP)
+			go Task(mw, pL[i], mL, stP)
+			time.Sleep(2 * time.Minute)
 		}
 	}
 
@@ -52,7 +54,7 @@ func PlaywrightInit(proxy ProxyStruct) playwright.BrowserContext {
 		Password: &proxy.pw,
 	}
 	browser, err := pw.Chromium.LaunchPersistentContext("", playwright.BrowserTypeLaunchPersistentContextOptions{
-		Headless:  playwright.Bool(false),
+		//	Headless:  playwright.Bool(false),
 		UserAgent: &UserAgent[rand.Intn(8)],
 		Proxy:     &pwProxyStrct,
 		Viewport:  &viewprt,
@@ -85,7 +87,7 @@ func Task(mw io.Writer, proxy ProxyStruct, manga []DbMangaEntry, stPoint int) {
 			identifier := IdentifierDeRegex(manga[i].Didentifier)
 
 			if _, err = page.Goto(cLink); err != nil {
-				log.Printf("coudln't hit webpage chapter specific")
+				log.Printf("coudln't hit webpage chapter specific :%v with :v%", manga[i].DchapterLink, proxy.ip)
 
 			}
 
@@ -97,11 +99,22 @@ func Task(mw io.Writer, proxy ProxyStruct, manga []DbMangaEntry, stPoint int) {
 				page.WaitForLoadState("load")
 				checkURL := page.URL()
 				if checkURL == cLink {
-					fmt.Fprintln(mw, "PAGE IS LIVE")
-					manga[i].DlastChapter = manga[i].DlastChapter + 1
-					manga[i].DchapterLink = cLink
-					MangaUpdate(manga[i])
-					WebhookSend(manga[i])
+					title, err := page.Title()
+					if err != nil {
+						log.Printf("couldn't get page title")
+					}
+					var titleNotFound bool = titleHas404(title)
+					if titleNotFound {
+						fmt.Fprintln(mw, "Page not live, will keep monitoring")
+						continue
+					} else {
+						fmt.Fprintln(mw, "PAGE IS LIVE")
+						WebhookSend(manga[i])
+						manga[i].DlastChapter = manga[i].DlastChapter + 1
+						manga[i].DchapterLink = cLink
+						MangaUpdate(manga[i])
+
+					}
 
 				} else {
 					fmt.Fprintln(mw, "Page not live, will keep monitoring")
@@ -109,7 +122,17 @@ func Task(mw io.Writer, proxy ProxyStruct, manga []DbMangaEntry, stPoint int) {
 			} else {
 				//algorithm will check the page in the ChapterLink page for an identifier to be gone.  usually it will be some kind of countdown clock
 				//This works by checking to see how many selectors of the identifier it can find.  If it can't find any, then the page is live
+				if page.URL() != manga[i].DchapterLink {
+					if _, err = page.Goto(manga[i].DchapterLink); err != nil {
+						log.Printf("Proxy is being rate limited")
+						continue
+					}
+					if page.URL() != manga[i].DchapterLink {
+						log.Printf("Proxy is being rate limited")
+						continue
+					}
 
+				}
 				countdownIdentifier, _ := page.QuerySelectorAll(identifier)
 				if countdownIdentifier == nil {
 					fmt.Fprintln(mw, "Failed to create slice of countdown elements")
@@ -127,6 +150,6 @@ func Task(mw io.Writer, proxy ProxyStruct, manga []DbMangaEntry, stPoint int) {
 			}
 		}
 
-		time.Sleep(30 * time.Second)
+		time.Sleep(2 * time.Hour)
 	}
 }

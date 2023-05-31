@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/joho/godotenv"
 	"log"
 	"net/http"
+	"os"
 )
 
 type Embed struct {
@@ -24,8 +26,11 @@ func WebhookSend(manga DbMangaEntry) {
 
 	var title = "New " + manga.Dmanga + " Chapter Released"
 	var description = "Find it here! : " + manga.DchapterLink
-
-	WebhookURL := "https://discord.com/api/webhooks/"
+	err := godotenv.Load(".env")
+	if err != nil {
+		log.Fatal("failed to load .env file")
+	}
+	wbKey := fmt.Sprintf(os.Getenv("webKey"))
 
 	payloadData := struct {
 		Content   interface{} `json:"content"`
@@ -55,7 +60,7 @@ func WebhookSend(manga DbMangaEntry) {
 		log.Fatal("Encoding json failed")
 	}
 
-	req, err := http.NewRequest("POST", WebhookURL, bytes.NewBuffer(payload))
+	req, err := http.NewRequest("POST", wbKey, bytes.NewBuffer(payload))
 	if err != nil {
 		fmt.Printf("couldn't create webhook")
 	}

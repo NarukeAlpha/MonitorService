@@ -1,2 +1,4 @@
 /.env
 /ProxyList.csv
+/Core/.env
+/Core/task_test.go
