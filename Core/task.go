@@ -5,35 +5,27 @@ import (
 	"github.com/playwright-community/playwright-go"
 	"io"
 	"log"
-	"math"
 	"math/rand"
+	"sync"
 	"time"
 )
 
 func TaskInit(mw io.Writer, mL []DbMangaEntry, pL []ProxyStruct) {
-	//var browser = PlaywrightInit()
-	var pLng = len(pL)
-	var mLng = len(mL)
-
-	if mLng <= pLng {
-		//launch one task per proxy up to the amount of task available
-		//need to add back go for concurrency when debugging is finished
-
-		for i := 0; i < mLng; i++ {
-			go Task(mw, pL[i], mL, i)
-			time.Sleep(2 * time.Minute)
+	//old implementation was gigascuffed, needs a full rewrite to take advantage of concurrency
+	//removed go routines for now, will be redone as application grows bigger but initial structure was made
+	//keeping in mind later implementation.
+	for {
+		for _, proxy := range pL {
+			Task(mw, proxy, mL)
+			//	time.Sleep(5 * time.Minute)
 		}
-
-	} else if mLng > pLng {
-		var stPointFl float64
-		stPointFl = float64(mLng) / float64(pLng)
-		stPoint := int(math.Round(stPointFl))
-
-		for i := 0; i < pLng; i++ {
-			stP := stPoint * i
-			go Task(mw, pL[i], mL, stP)
-			time.Sleep(2 * time.Minute)
-		}
+		var wg sync.WaitGroup
+		mChannel := make(chan []DbMangaEntry)
+		MangaSync(mChannel, &wg)
+		mL = <-mChannel
+		close(mChannel)
+		log.Printf("Manga list Synced")
+		time.Sleep(10 * time.Minute)
 	}
 
 }
@@ -74,82 +66,80 @@ func PlaywrightInit(proxy ProxyStruct) playwright.BrowserContext {
 	return browser
 }
 
-func Task(mw io.Writer, proxy ProxyStruct, manga []DbMangaEntry, stPoint int) {
+func Task(mw io.Writer, proxy ProxyStruct, manga []DbMangaEntry) {
 	browser := PlaywrightInit(proxy)
 	page, err := browser.NewPage()
 	if err != nil {
 		log.Fatalf("could not create page: %v", err)
 	}
 	defer page.Close()
-	for {
-		for i := stPoint; i < len(manga); i++ {
-			cLink := ChapterLinkIncrementer(manga[i].DchapterLink, manga[i].DlastChapter)
-			identifier := IdentifierDeRegex(manga[i].Didentifier)
+	for i := 1; i < len(manga); i++ {
+		cLink := ChapterLinkIncrementer(manga[i].DchapterLink, manga[i].DlastChapter)
+		identifier := IdentifierDeRegex(manga[i].Didentifier)
 
-			if _, err = page.Goto(cLink); err != nil {
-				log.Printf("coudln't hit webpage chapter specific :%v with :v%", manga[i].DchapterLink, proxy.ip)
+		if _, err = page.Goto(cLink); err != nil {
+			log.Printf("coudln't hit webpage chapter specific :%v with :v%", manga[i].DchapterLink, proxy.ip)
 
-			}
+		}
 
-			if manga[i].Didentifier == "" {
-				log.Panicf("null value on identifier of manga entry :%v", manga[i])
-			} else if manga[i].Didentifier == "Release" {
-				//algorithm will check the next paged supposed to go live when the chapter is releaqsed
+		if manga[i].Didentifier == "" {
+			log.Panicf("null value on identifier of manga entry :%v", manga[i])
+		} else if manga[i].Didentifier == "Release" {
+			//algorithm will check the next paged supposed to go live when the chapter is releaqsed
 
-				page.WaitForLoadState("load")
-				checkURL := page.URL()
-				if checkURL == cLink {
-					title, err := page.Title()
-					if err != nil {
-						log.Printf("couldn't get page title")
-					}
-					var titleNotFound bool = titleHas404(title)
-					if titleNotFound {
-						fmt.Fprintln(mw, "Page not live, will keep monitoring")
-						continue
-					} else {
-						fmt.Fprintln(mw, "PAGE IS LIVE")
-						WebhookSend(manga[i])
-						manga[i].DlastChapter = manga[i].DlastChapter + 1
-						manga[i].DchapterLink = cLink
-						MangaUpdate(manga[i])
-
-					}
-
-				} else {
+			page.WaitForLoadState("load")
+			checkURL := page.URL()
+			if checkURL == cLink {
+				title, err := page.Title()
+				if err != nil {
+					log.Printf("couldn't get page title")
+				}
+				var titleNotFound bool = titleHas404(title)
+				if titleNotFound {
 					fmt.Fprintln(mw, "Page not live, will keep monitoring")
-				}
-			} else {
-				//algorithm will check the page in the ChapterLink page for an identifier to be gone.  usually it will be some kind of countdown clock
-				//This works by checking to see how many selectors of the identifier it can find.  If it can't find any, then the page is live
-				if page.URL() != manga[i].DchapterLink {
-					if _, err = page.Goto(manga[i].DchapterLink); err != nil {
-						log.Printf("Proxy is being rate limited")
-						continue
-					}
-					if page.URL() != manga[i].DchapterLink {
-						log.Printf("Proxy is being rate limited")
-						continue
-					}
-
-				}
-				countdownIdentifier, _ := page.QuerySelectorAll(identifier)
-				if countdownIdentifier == nil {
-					fmt.Fprintln(mw, "Failed to create slice of countdown elements")
-				} else if len(countdownIdentifier) == 0 {
+					continue
+				} else {
 					fmt.Fprintln(mw, "PAGE IS LIVE")
+					WebhookSend(manga[i])
 					manga[i].DlastChapter = manga[i].DlastChapter + 1
 					manga[i].DchapterLink = cLink
 					MangaUpdate(manga[i])
-					WebhookSend(manga[i])
 
-				} else {
-					fmt.Fprintln(mw, "Page not live, will keep monitoring")
+				}
+
+			} else {
+				fmt.Fprintln(mw, "Page not live, will keep monitoring")
+			}
+		} else {
+			//algorithm will check the page in the ChapterLink page for an identifier to be gone.  usually it will be some kind of countdown clock
+			//This works by checking to see how many selectors of the identifier it can find.  If it can't find any, then the page is live
+			if page.URL() != manga[i].DchapterLink {
+				if _, err = page.Goto(manga[i].DchapterLink); err != nil {
+					log.Printf("Proxy is being rate limited")
+					continue
+				}
+				if page.URL() != manga[i].DchapterLink {
+					log.Printf("Proxy is being rate limited")
+					continue
 				}
 
 			}
-		}
+			countdownIdentifier, _ := page.QuerySelectorAll(identifier)
+			if countdownIdentifier == nil {
+				fmt.Fprintln(mw, "Failed to create slice of countdown elements")
+			} else if len(countdownIdentifier) == 0 {
+				fmt.Fprintln(mw, "PAGE IS LIVE")
+				WebhookSend(manga[i])
+				manga[i].DlastChapter = manga[i].DlastChapter + 1
+				manga[i].DchapterLink = cLink
+				MangaUpdate(manga[i])
 
-		time.Sleep(2 * time.Hour)
+			} else {
+				fmt.Fprintln(mw, "Page not live, will keep monitoring")
+			}
+
+		}
 	}
+	log.Printf("finished task for proxy :%v", proxy.ip)
+
 }

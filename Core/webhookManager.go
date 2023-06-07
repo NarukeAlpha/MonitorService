@@ -30,7 +30,7 @@ func WebhookSend(manga DbMangaEntry) {
 	if err != nil {
 		log.Fatal("failed to load .env file")
 	}
-	wbKey := fmt.Sprintf(os.Getenv("webKey"))
+	wbKey := fmt.Sprintf(os.Getenv("webKey2"))
 
 	payloadData := struct {
 		Content   interface{} `json:"content"`

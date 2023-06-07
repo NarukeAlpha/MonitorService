@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"os/signal"
 	"sync"
 )
 
@@ -39,12 +40,20 @@ func main() {
 	close(mChannel)
 	close(pChannel)
 
+	log.Printf("Starting monitor")
 	//initializing the monitor
 	Core.TaskInit(mw, mL, pL)
 
-	for {
-		//infinite loop to keep the program running
-		//might add an open server to interaqct directly with the program?
-	}
+	//for {
+	//	//infinite loop to keep the program running
+	//	//might add an open server to interaqct directly with the program?
+	//	//This for loop is never hit at the moment since there is no concurrency running
+	//	//but it is here for future use when go Core.TaskInit is used, then we can do something, probably open a server with gorilla mux for health/monitor/resync
+	//
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt)
+	log.Println("Press Ctrl+C to exit")
+	<-stop
 
 }

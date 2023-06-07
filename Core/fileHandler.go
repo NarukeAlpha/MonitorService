@@ -69,6 +69,7 @@ func ChapterLinkIncrementer(chapterLink string, chapterNumber int) string {
 		result := re.ReplaceAllString(chapterLink, replacement)
 		return result
 	}
+	log.Printf("ChapterLinkIncrementer failed - err: %v", "no match found")
 	return "error"
 
 }
