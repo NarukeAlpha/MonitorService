@@ -4,10 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/joho/godotenv"
 	"log"
 	"net/http"
-	"os"
 )
 
 type Embed struct {
@@ -22,15 +20,10 @@ type Field struct {
 	Value string `json:"value"`
 }
 
-func WebhookSend(manga DbMangaEntry) {
+func WebhookSend(manga DbMangaEntry, wbKey string) {
 
 	var title = "New " + manga.Dmanga + " Chapter Released"
 	var description = "Find it here! : " + manga.DchapterLink
-	err := godotenv.Load(".env")
-	if err != nil {
-		log.Fatal("failed to load .env file")
-	}
-	wbKey := fmt.Sprintf(os.Getenv("webKey2"))
 
 	payloadData := struct {
 		Content   interface{} `json:"content"`

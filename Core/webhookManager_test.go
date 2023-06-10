@@ -1,6 +1,12 @@
 package Core
 
-import "testing"
+import (
+	"fmt"
+	"github.com/joho/godotenv"
+	"log"
+	"os"
+	"testing"
+)
 
 func TestWebhookSend(t *testing.T) {
 	var manga = DbMangaEntry{
@@ -11,8 +17,14 @@ func TestWebhookSend(t *testing.T) {
 		DchapterLink: "https://www.google.com",
 		Didentifier:  "test",
 	}
+	err := godotenv.Load("./.env")
+	if err != nil {
+		log.Fatal("failed to load .env file")
+	}
+	wbKey := fmt.Sprintf(os.Getenv("webKey"))
+
 	t.Run(t.Name(), func(t *testing.T) {
-		WebhookSend(manga)
+		WebhookSend(manga, wbKey)
 	})
 
 	//type args struct {

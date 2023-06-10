@@ -33,23 +33,3 @@ type ProxyStruct struct {
 	usr string
 	pw  string
 }
-
-//{
-//"content": null,
-//"embeds": [
-//  {
-//    "title": "NEW ELECEED CHAPTER FOUND",
-//    "description": "The latest chapter has been found",
-//    "color": 5814783,
-//    "fields": [
-//      {
-//        "name": "LINK BELOW",
-//        "value": "placeholder"
-//      }
-//    ]
-//  }
-//],
-//"username": "Monitor",
-//"avatar_url": "https://i.imgur.com/gTtPuMp.png",
-//"attachments": []
-//}

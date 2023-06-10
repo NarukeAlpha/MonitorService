@@ -2,6 +2,9 @@ package main
 
 import (
 	"eleceedMonitor/Core"
+	"fmt"
+	"github.com/joho/godotenv"
+	"github.com/playwright-community/playwright-go"
 	"io"
 	"log"
 	"os"
@@ -16,6 +19,13 @@ func AssertErrorToNil(message string, err error) {
 }
 
 func main() {
+	err := godotenv.Load(".env")
+	if err != nil {
+		log.Fatal("failed to load .env file")
+	}
+	wbKey := fmt.Sprintf(os.Getenv("webKey"))
+	err = playwright.Install()
+
 	//making the channels for the go routines to communicate and reduce execution time before monitor starts
 	var wg sync.WaitGroup
 	mChannel := make(chan []Core.DbMangaEntry)
@@ -42,7 +52,7 @@ func main() {
 
 	log.Printf("Starting monitor")
 	//initializing the monitor
-	Core.TaskInit(mw, mL, pL)
+	Core.TaskInit(mw, mL, pL, wbKey)
 
 	//for {
 	//	//infinite loop to keep the program running
