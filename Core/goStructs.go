@@ -1,5 +1,7 @@
 package Core
 
+import "log"
+
 var UserAgent = []string{
 	"Mozilla/5.0 (X11; CrOS x86_64 13597.84.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.153 Safari/537.36",
 	"Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36",
@@ -32,4 +34,10 @@ type ProxyStruct struct {
 	ip  string
 	usr string
 	pw  string
+}
+
+func AssertErrorToNil(message string, err error) {
+	if err != nil {
+		log.Panicf(message, err)
+	}
 }

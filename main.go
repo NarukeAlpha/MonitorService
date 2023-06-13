@@ -12,12 +12,6 @@ import (
 	"sync"
 )
 
-func AssertErrorToNil(message string, err error) {
-	if err != nil {
-		log.Fatalf(message, err)
-	}
-}
-
 func main() {
 	err := godotenv.Load(".env")
 	if err != nil {
